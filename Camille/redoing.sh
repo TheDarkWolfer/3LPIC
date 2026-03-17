@@ -1,8 +1,8 @@
- #!/bin/bash
+#!/bin/bash
 
- # Small script to re-template a VM so that we don't have seventy VMs that 
- # share the same hostname & stuff, just need one SSH login and to run this
- # script and fill in the prompts
+  # Small script to re-template a VM so that we don't have seventy VMs that 
+  # share the same hostname & stuff, just need one SSH login and to run this
+  # script and fill in the prompts
 
 # Check if script is run as root
 if [ "$(id -u)" -ne 0 ]; then
@@ -16,13 +16,9 @@ ssh_key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDLslsfgSECmxtJlpOf/wuFpO+pR3OaVh1
 read -p "Enter the new username: " username
 
 # Create the user and add to sudo group
-if id "$username" &>/dev/null; then
-    echo "User $username already exists."
-else
-    useradd -m -s /bin/bash "$username"
-    usermod -aG sudo "$username"
-    echo "User $username created and added to sudo group."
-fi
+/sbin/useradd -m -s /bin/bash "$username"
+/sbin/usermod -aG sudo "$username"
+echo "User $username created and added to sudo group."
 
 # Set a password for the new user
 passwd "$username"
