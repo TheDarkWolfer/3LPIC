@@ -18,3 +18,16 @@ firejail --version
 
 
 ## HTTPS
+
+
+## Load balancing avec Pacemaker
+1. Installation de pacemaker (toutes les machines)
+```bash
+sudo apt update
+sudo apt install pacemaker corosync pcs crmsh apache2
+```
+
+2. Configuration de corosync sur le *load balancer*
+```bash
+sudo corosync-keygen
+```
