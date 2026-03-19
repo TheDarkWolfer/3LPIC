@@ -51,7 +51,7 @@ sudo chmod 400 /etc/corosync/authkey
 totem {
     version: 2
     cluster_name: coursero
-    transport: udpu
+transport: udpu
     interface {
         ringnumber: 0
         
@@ -65,16 +65,19 @@ nodelist {
     # Noeud de l'équilibreur de charges (c'est pas un ELB mais ça fonctionne ^^)
     node {
         ring0_addr: 192.168.122.28
+        name: load-balancer
         nodeid: 1
     }
     
     # Première instance de site web
     node {
-        ring0_addr: 192.168.122.113
+        ring0_addr: 192.168.122.111
+        name: web-one
         nodeid: 2
     }
     node {
         ring0_addr: 192.168.122.76
+        name: web-two
         nodeid: 3
     }
 }
@@ -88,3 +91,17 @@ logging {
 
 ```
 >[!NOTE] On applique la configuration avec `sudo systemctl restart corosync` ; si besoin est, on l'active au démarrage avec `sudo systemctl enable --now corosync`
+
+6. Activation de pacemaker
+```bash
+sudo systemctl enable --now pacemaker
+
+# Vérification
+sudo crm status
+```
+
+## Gestion des machines travailleuses avec Puppet
+1. Installer le serveur Puppet sur `load-balancer`
+```bash
+sudo apt install puppetserver
+```
