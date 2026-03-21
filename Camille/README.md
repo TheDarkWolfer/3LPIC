@@ -19,6 +19,45 @@ firejail --version
 
 ## HTTPS
 
+### Configuration Apache2
+```conf
+# Redirection automatique si quelqu'un se connecte en HTTP
+# Bon vieux p'tit https://http.cat/status/308
+<VirtualHost *:80>
+    ServerName www.coursero.com
+    Redirect permanent / https://www.coursero.com/
+</VirtualHost>
+
+<VirtualHost *:443>
+
+    # Informations basiques du site web (fausse adresse mail bien sûr) 
+    ServerName www.coursero.com
+    ServerAdmin camille@coursero.com
+
+    DocumentRoot /var/www/www.coursero.com
+
+    ErrorLog /var/log/apache2/www.coursero.com/error.log
+    CustomLog /var/log/apache2/www.coursero.com/access.log combined
+    LogLevel warn
+    
+    SSLEngine on
+    SSLCertificateFile      /etc/ssl/certs/coursero.crt
+    SSLCertificateKeyFile   /etc/ssl/private/coursero.key
+
+    # On restreint l'accès à la route de création de compte,
+    # dans le but d'éviter l'abus du site
+    <Directory /var/www/www.coursero.com/register>
+     
+	AuthType Basic
+	AuthName "Restricted"
+	AuthUserFile /etc/apache2/users/coursero.passwd
+
+	Require valid-user
+        Options -Indexes
+        AllowOverride None
+    </Directory>
+</VirtualHost>
+```
 
 ## Load balancing avec Pacemaker
 1. Installation de pacemaker (toutes les machines)
@@ -107,6 +146,8 @@ sudo crm status
 ```
 Exemple de résultat de la commande `crm status` :
 ```bash
+sudo crm status # Élévation de privilèges nécessaire
+
 Cluster Summary:
   * Stack: corosync (Pacemaker is running)
   * Current DC: web-two (version 3.0.0-3.0.0) - partition with quorum
@@ -138,6 +179,16 @@ sudo crm configure property stonith-enabled=false
 sudo crm configure primitive virtual-ip ocf:heartbeat:IPaddr2 \
     params ip="192.168.122.100" \
     cidr_netmask="24" \
+    op monitor interval="30s"
+```
+
+9. Paramétrage d'une ressource Apache qu'on va affecter aux VMs 
+>[!INFO]
+> Le paramètre "configfile" permet de savoir où se trouve le fichier de config Apache
+```bash
+crm configure primitive apache-web 
+    ocf:heartbeat:apache \
+    params configfile="/etc/apache2/sites-available/www.coursero.fr.conf" \
     op monitor interval="30s"
 ```
 
