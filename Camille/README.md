@@ -89,6 +89,12 @@ logging {
     to_syslog: yes
 }
 
+# Faut un bloc pour le quorum, sinon corosync s'énèrve -_-
+quorum {
+    provider: corosync_votequorum
+}
+
+
 ```
 >[!NOTE] On applique la configuration avec `sudo systemctl restart corosync` ; si besoin est, on l'active au démarrage avec `sudo systemctl enable --now corosync`
 
@@ -98,6 +104,41 @@ sudo systemctl enable --now pacemaker
 
 # Vérification
 sudo crm status
+```
+Exemple de résultat de la commande `crm status` :
+```bash
+Cluster Summary:
+  * Stack: corosync (Pacemaker is running)
+  * Current DC: web-two (version 3.0.0-3.0.0) - partition with quorum
+  * Last updated: Fri Mar 20 23:16:58 2026 on maestro
+  * Last change:  Fri Mar 20 23:16:24 2026 by root via root on maestro
+  * 3 nodes configured
+  * 0 resource instances configured
+
+Node List:
+  * Online: [ maestro web-one web-two ]
+
+Full List of Resources:
+  * No resources
+```
+
+7. Désactivation de la politique "*S*hoot *T*he *O*ther *N*ode *I*n *T*he *H*ead" 
+>[!IMPORTANT]
+> inutile dans un cluster aussi petit, avec un quorum décisionnel impair
+> À lancer sur la machine décisionnelle (ici `maestro`)
+```bash
+sudo crm configure property stonith-enabled=false
+```
+
+8. Paramétrage d'une plage d'IPs virtuelles
+>[!IMPORTANT]
+> Permet aux machines de travailler même sans le maestro, au cas où ce dernier 
+> viendrait à manquer à l'appel
+```bash
+sudo crm configure primitive virtual-ip ocf:heartbeat:IPaddr2 \
+    params ip="192.168.122.100" \
+    cidr_netmask="24" \
+    op monitor interval="30s"
 ```
 
 ## Gestion des machines travailleuses avec Puppet
