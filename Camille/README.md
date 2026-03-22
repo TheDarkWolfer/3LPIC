@@ -19,6 +19,37 @@ firejail --version
 
 ## HTTPS
 
+### Certificat TLS
+Pour que les données transmises sur le site soient sécurisées, nous devons créer un certificat SSL/TLS. Pour un environnement de test, on peut utiliser OpenSSL et créer des certificats autosignés ; pour un environnement de déploiement réel, nous pourrons utiliser certbot et letsencrypt.
+
+#### Old Reliable : Méthode OpenSSL
+1. Installation
+```bash
+sudo apt update 
+sudo apt install openssl -y
+```
+
+2. Génération d'une clef privée, ici RSA de 2048 bits, et création d'un certificat avec la clef associée
+>[!INFO]
+> La création du certificat nécessite de répondre à quelques questions sur les différents détails attachés
+> au certificat.
+```bash
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout /etc/ssl/private/coursero.key \
+    -out /etc/ssl/certs/coursero.crt
+```
+
+3. Vérification du certificat
+```bash
+openssl x509 -in /etc/ssl/certs/coursero.crt -text -noout
+```
+
+4. Permissions des fichiers
+```bash
+sudo chmod 600 /etc/ssl/private/coursero.key
+sudo chmod 644 /etc/ssl/certs/coursero.cert
+```
+
 ### Configuration Apache2
 ```conf
 # Redirection automatique si quelqu'un se connecte en HTTP
@@ -34,28 +65,17 @@ firejail --version
     ServerName www.coursero.com
     ServerAdmin camille@coursero.com
 
+    # [!] À modifier pour être en accord avec le site créé par Dimitri
     DocumentRoot /var/www/www.coursero.com
 
     ErrorLog /var/log/apache2/www.coursero.com/error.log
     CustomLog /var/log/apache2/www.coursero.com/access.log combined
     LogLevel warn
     
+    # Faut tout ça pour avoir une connection HTTPS
     SSLEngine on
     SSLCertificateFile      /etc/ssl/certs/coursero.crt
     SSLCertificateKeyFile   /etc/ssl/private/coursero.key
-
-    # On restreint l'accès à la route de création de compte,
-    # dans le but d'éviter l'abus du site
-    <Directory /var/www/www.coursero.com/register>
-     
-	AuthType Basic
-	AuthName "Restricted"
-	AuthUserFile /etc/apache2/users/coursero.passwd
-
-	Require valid-user
-        Options -Indexes
-        AllowOverride None
-    </Directory>
 </VirtualHost>
 ```
 
@@ -196,4 +216,71 @@ crm configure primitive apache-web
 1. Installer le serveur Puppet sur `load-balancer`
 ```bash
 sudo apt install puppetserver
+```
+
+2. Modifier la configuration du serveur
+```bash
+sudo mkdir -p /etc/puppetlabs/puppetserver/
+sudo nano /etc/puppetlabs/puppetserver/puppetserver.conf
+```
+
+```conf
+[main]
+certname = maestro
+server = maestro
+environment = production
+
+[server]
+vardir = /opt/puppetlabs/server/data/puppetserver
+logdir = /var/log/puppetlabs/puppetserver
+rundir = /var/run/puppetlabs/puppetserver
+pidfile = /var/run/puppetlabs/puppetserver/puppetserver.pid
+codedir = /etc/puppetlabs/code
+```
+
+3. Configuration d'un manifeste de site
+>[!INFO] 
+> Le manifest s'occupe de l'installation des paquets et de la distribution des configurations
+> de manière adaptée. Cet outil a été choisi pour éviter la réécriture constante des configurations
+> et des commandes d'installation sur chaque VM : en bref, meilleure scalabilité que Ctrl+C/Ctrl+V
+```puppet
+# Gestion des deux noeuds webservers
+node 'web-one', 'web-two' {
+  # Apache + SSL
+  package { 'apache2':
+    ensure => installed,
+  }
+
+  service { 'apache2':
+    ensure => running,
+    enable => true,
+    require => Package['apache2'],
+  }
+
+  # Activation du module SSL/TLS
+  exec { 'enable-ssl':
+    command => '/usr/sbin/a2enmod ssl',
+    creates => '/etc/apache2/mods-enabled/ssl.load',
+    notify  => Service['apache2'],
+  }
+
+  # Configuration de l'hôte virtuel SSL
+  file { '/etc/apache2/sites-available/ssl.conf':
+    ensure  => file,
+    content => template('apache_ssl/ssl.conf.erb'),
+    notify  => Service['apache2'],
+    require => Exec['generate-ssl-cert'],
+  }
+
+  exec { 'enable-ssl-site':
+    command => '/usr/sbin/a2ensite ssl',
+    creates => '/etc/apache2/sites-enabled/ssl.conf',
+    notify  => Service['apache2'],
+    require => File['/etc/apache2/sites-available/ssl.conf'],
+  }
+}
+
+node 'maestro' {
+  # Maestro est grand, il se gère tout seul
+}
 ```
