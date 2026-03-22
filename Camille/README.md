@@ -1,5 +1,9 @@
 # 3LPIC
 
+## Dev note
+>[!NOTE]DB
+> Les bases de données MongoDB utilisent le port `27017`
+
 ## Scripts 
 `redoing.sh`
 Ce script sert à mettre en place une VM après qu'elle aie été clonée.
@@ -16,6 +20,24 @@ firejail --version
 
 2. 
 
+## Site web Coursero
+Apache s'attend à ce que les fichiers du site web soient dans `/var/www/www.coursero.com`. Ce faisant, il vous faudra suivre les étapes ci-dessous :
+1. Cloner le dépôt `git`
+```bash
+git clone https://github.com/TheDarkWolfer/3LPIC
+```
+
+2. Build le projet
+```bash
+cd ./3LPIC/website
+npm install
+npm run build
+```
+
+3. Déplacer les fichiers statiques
+```bash
+mv ./build/ /var/www/www.coursero.com/
+```
 
 ## HTTPS
 
@@ -35,8 +57,8 @@ sudo apt install openssl -y
 > au certificat.
 ```bash
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout /etc/ssl/private/coursero.key \
-    -out /etc/ssl/certs/coursero.crt
+      -keyout /etc/ssl/private/coursero.key \
+      -out /etc/ssl/certs/coursero.crt
 ```
 
 3. Vérification du certificat
@@ -55,27 +77,27 @@ sudo chmod 644 /etc/ssl/certs/coursero.cert
 # Redirection automatique si quelqu'un se connecte en HTTP
 # Bon vieux p'tit https://http.cat/status/308
 <VirtualHost *:80>
-    ServerName www.coursero.com
-    Redirect permanent / https://www.coursero.com/
+      ServerName www.coursero.com
+      Redirect permanent / https://www.coursero.com/
 </VirtualHost>
 
 <VirtualHost *:443>
 
-    # Informations basiques du site web (fausse adresse mail bien sûr) 
-    ServerName www.coursero.com
-    ServerAdmin camille@coursero.com
+      # Informations basiques du site web (fausse adresse mail bien sûr) 
+      ServerName www.coursero.com
+      ServerAdmin camille@coursero.com
 
-    # [!] À modifier pour être en accord avec le site créé par Dimitri
-    DocumentRoot /var/www/www.coursero.com
+      # [!] À modifier pour être en accord avec le site créé par Dimitri
+      DocumentRoot /var/www/www.coursero.com
 
-    ErrorLog /var/log/apache2/www.coursero.com/error.log
-    CustomLog /var/log/apache2/www.coursero.com/access.log combined
-    LogLevel warn
-    
-    # Faut tout ça pour avoir une connection HTTPS
-    SSLEngine on
-    SSLCertificateFile      /etc/ssl/certs/coursero.crt
-    SSLCertificateKeyFile   /etc/ssl/private/coursero.key
+      ErrorLog /var/log/apache2/www.coursero.com/error.log
+      CustomLog /var/log/apache2/www.coursero.com/access.log combined
+      LogLevel warn
+      
+      # Faut tout ça pour avoir une connection HTTPS
+      SSLEngine on
+      SSLCertificateFile      /etc/ssl/certs/coursero.crt
+      SSLCertificateKeyFile   /etc/ssl/private/coursero.key
 </VirtualHost>
 ```
 
@@ -108,49 +130,49 @@ sudo chmod 400 /etc/corosync/authkey
 ```conf
 # Caractéristiques du cluster
 totem {
-    version: 2
-    cluster_name: coursero
+      version: 2
+      cluster_name: coursero
 transport: udpu
-    interface {
-        ringnumber: 0
-        
-        # Adresse basée sur les subnets générés par Libvirt/Qemu ; à ajuster lors du déploiement réel
-        bindnetaddr: 192.168.122.0
-        mcastport: 5405
-    }
+      interface {
+          ringnumber: 0
+          
+          # Adresse basée sur les subnets générés par Libvirt/Qemu ; à ajuster lors du déploiement réel
+          bindnetaddr: 192.168.122.0
+          mcastport: 5405
+      }
 }
 
 nodelist {
-    # Noeud de l'équilibreur de charges (c'est pas un ELB mais ça fonctionne ^^)
-    node {
-        ring0_addr: 192.168.122.28
-        name: load-balancer
-        nodeid: 1
-    }
-    
-    # Première instance de site web
-    node {
-        ring0_addr: 192.168.122.111
-        name: web-one
-        nodeid: 2
-    }
-    node {
-        ring0_addr: 192.168.122.76
-        name: web-two
-        nodeid: 3
-    }
+      # Noeud de l'équilibreur de charges (c'est pas un ELB mais ça fonctionne ^^)
+      node {
+          ring0_addr: 192.168.122.28
+          name: load-balancer
+          nodeid: 1
+      }
+      
+      # Première instance de site web
+      node {
+          ring0_addr: 192.168.122.111
+          name: web-one
+          nodeid: 2
+      }
+      node {
+          ring0_addr: 192.168.122.76
+          name: web-two
+          nodeid: 3
+      }
 }
 
 # On log tout ça dans les fichiers système
 logging {
-    to_logfile: yes
-    logfile: /var/log/corosync/corosync.log
-    to_syslog: yes
+      to_logfile: yes
+      logfile: /var/log/corosync/corosync.log
+      to_syslog: yes
 }
 
 # Faut un bloc pour le quorum, sinon corosync s'énèrve -_-
 quorum {
-    provider: corosync_votequorum
+      provider: corosync_votequorum
 }
 
 
@@ -169,18 +191,18 @@ Exemple de résultat de la commande `crm status` :
 sudo crm status # Élévation de privilèges nécessaire
 
 Cluster Summary:
-  * Stack: corosync (Pacemaker is running)
-  * Current DC: web-two (version 3.0.0-3.0.0) - partition with quorum
-  * Last updated: Fri Mar 20 23:16:58 2026 on maestro
-  * Last change:  Fri Mar 20 23:16:24 2026 by root via root on maestro
-  * 3 nodes configured
-  * 0 resource instances configured
+    * Stack: corosync (Pacemaker is running)
+    * Current DC: web-two (version 3.0.0-3.0.0) - partition with quorum
+    * Last updated: Fri Mar 20 23:16:58 2026 on maestro
+    * Last change:  Fri Mar 20 23:16:24 2026 by root via root on maestro
+    * 3 nodes configured
+    * 0 resource instances configured
 
 Node List:
-  * Online: [ maestro web-one web-two ]
+    * Online: [ maestro web-one web-two ]
 
 Full List of Resources:
-  * No resources
+    * No resources
 ```
 
 7. Désactivation de la politique "*S*hoot *T*he *O*ther *N*ode *I*n *T*he *H*ead" 
@@ -197,9 +219,9 @@ sudo crm configure property stonith-enabled=false
 > viendrait à manquer à l'appel
 ```bash
 sudo crm configure primitive virtual-ip ocf:heartbeat:IPaddr2 \
-    params ip="192.168.122.100" \
-    cidr_netmask="24" \
-    op monitor interval="30s"
+      params ip="192.168.122.100" \
+      cidr_netmask="24" \
+      op monitor interval="30s"
 ```
 
 9. Paramétrage d'une ressource Apache qu'on va affecter aux VMs 
@@ -207,9 +229,9 @@ sudo crm configure primitive virtual-ip ocf:heartbeat:IPaddr2 \
 > Le paramètre "configfile" permet de savoir où se trouve le fichier de config Apache
 ```bash
 crm configure primitive apache-web 
-    ocf:heartbeat:apache \
-    params configfile="/etc/apache2/sites-available/www.coursero.fr.conf" \
-    op monitor interval="30s"
+      ocf:heartbeat:apache \
+      params configfile="/etc/apache2/sites-available/www.coursero.fr.conf" \
+      op monitor interval="30s"
 ```
 
 ## Gestion des machines travailleuses avec Puppet
@@ -246,41 +268,98 @@ codedir = /etc/puppetlabs/code
 ```puppet
 # Gestion des deux noeuds webservers
 node 'web-one', 'web-two' {
-  # Apache + SSL
-  package { 'apache2':
-    ensure => installed,
-  }
+    # Apache + SSL
+    package { 'apache2':
+      ensure => installed,
+    }
 
-  service { 'apache2':
-    ensure => running,
-    enable => true,
-    require => Package['apache2'],
-  }
+    service { 'apache2':
+      ensure => running,
+      enable => true,
+      require => Package['apache2'],
+    }
 
-  # Activation du module SSL/TLS
-  exec { 'enable-ssl':
-    command => '/usr/sbin/a2enmod ssl',
-    creates => '/etc/apache2/mods-enabled/ssl.load',
-    notify  => Service['apache2'],
-  }
+    # Activation du module SSL/TLS
+    exec { 'enable-ssl':
+      command => '/usr/sbin/a2enmod ssl',
+      creates => '/etc/apache2/mods-enabled/ssl.load',
+      notify  => Service['apache2'],
+    }
 
-  # Configuration de l'hôte virtuel SSL
-  file { '/etc/apache2/sites-available/ssl.conf':
-    ensure  => file,
-    content => template('apache_ssl/ssl.conf.erb'),
-    notify  => Service['apache2'],
-    require => Exec['generate-ssl-cert'],
-  }
+    # Configuration de l'hôte virtuel SSL
+    file { '/etc/apache2/sites-available/ssl.conf':
+      ensure  => file,
+      content => template('apache_ssl/ssl.conf.erb'),
+      notify  => Service['apache2'],
+      require => Exec['generate-ssl-cert'],
+    }
 
-  exec { 'enable-ssl-site':
-    command => '/usr/sbin/a2ensite ssl',
-    creates => '/etc/apache2/sites-enabled/ssl.conf',
-    notify  => Service['apache2'],
-    require => File['/etc/apache2/sites-available/ssl.conf'],
-  }
+    exec { 'enable-ssl-site':
+      command => '/usr/sbin/a2ensite ssl',
+      creates => '/etc/apache2/sites-enabled/ssl.conf',
+      notify  => Service['apache2'],
+      require => File['/etc/apache2/sites-available/ssl.conf'],
+    }
+
+    # Installation de mongodb - basé sur https://www.mongodb.com/docs/v8.0/tutorial/install-mongodb-on-debian/, car manquant des dépôts APT ᵕ—ᴗ—
+    exec { 'mongodb-gpg-key':
+      command => '/usr/bin/curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | /usr/bin/gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg',
+      creates => '/usr/share/keyrings/mongodb-server-7.0.gpg',
+    }
+
+    # Ajout de MongoDB dans la liste de dépôts ; permet la mise à jour automatique avec APT
+    file { '/etc/apt/sources.list.d/mongodb-org-7.0.list':
+      ensure  => file,
+      content => "deb [signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main\n",
+      require => Exec['mongodb-gpg-key'],
+      notify  => Exec['apt-update-mongo'],
+    }
+
+    # Mise à jour de la liste de paquets ; nécessaire pour l'installation et la mise à jour
+    exec { 'apt-update-mongo':
+      command     => '/usr/bin/apt-get update',
+      refreshonly => true,
+    }
+
+    # Installation MongoDB
+    package { 'mongodb-org':
+      ensure  => installed,
+      require => Exec['apt-update-mongo'],
+    }
+
+    # Création de la config sur les deux instances
+    file { '/etc/mongod.conf':
+      ensure  => file,
+      content => @("CONF"),
+        storage:
+          dbPath: /var/lib/mongodb
+
+        systemLog:
+          destination: file
+          path: /var/log/mongodb/mongod.log
+          logAppend: true
+
+        net:
+          port: 27017
+          bindIp: 0.0.0.0
+
+        replication:
+          replSetName: "rs-coursero"
+        | CONF
+      require => Package['mongodb-org'],
+      notify  => Service['mongod'],
+    }
+
+    # Démarrer les instances
+    service { 'mongod':
+      ensure  => running,
+      enable  => true,
+      require => Package['mongodb-org'],
+    }
+
 }
 
 node 'maestro' {
-  # Maestro est grand, il se gère tout seul
+    # Maestro est grand, il se gère tout seul
 }
 ```
