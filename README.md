@@ -32,12 +32,12 @@
 
 
 ## Dev note
-> [!NOTE]DB
-> Les bases de données MongoDB utilisent le port `27017`
+>[!NOTE]DB
+>Les bases de données MongoDB utilisent le port `27017`
 
-> [!IMPORTANT] `Maestro` vs `load-balancer`
-> Les deux noms font référence à la même machine : celle qui héberge le load-balancer ainsi que
-> les serveurs Puppet, Corosync et Pacemaker
+>[!IMPORTANT] `Maestro` vs `load-balancer`
+>Les deux noms font référence à la même machine : celle qui héberge le load-balancer ainsi que
+>les serveurs Puppet, Corosync et Pacemaker
 
 ## Scripts 
 `redoing.sh`
@@ -75,9 +75,9 @@ sudo apt install openssl -y
 ```
 
 2. Génération d'une clef privée, ici RSA de 2048 bits, et création d'un certificat avec la clef associée
-> [!INFO]
-> La création du certificat nécessite de répondre à quelques questions sur les différents détails attachés
-> au certificat.
+>[!INFO]
+>La création du certificat nécessite de répondre à quelques questions sur les différents détails attachés
+>au certificat.
 ```bash
 sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
       -keyout /etc/ssl/private/coursero.key \
@@ -151,9 +151,9 @@ sudo chmod 400 /etc/corosync/authkey
 ```
 
 5. `/etc/corosync/corosync.conf` sur les trois machines
-> [!IMPORTANT] 
-> Les blocs `node` sont à dupliquer pour chaque machine, et il faudra également accorder les adresses IPs,
-> ainsi que les noms, à votre plan d'adressage (ici, basé sur l'adressage Qemu)
+>[!IMPORTANT] 
+>Les blocs `node` sont à dupliquer pour chaque machine, et il faudra également accorder les adresses IPs,
+>ainsi que les noms, à votre plan d'adressage (ici, basé sur l'adressage Qemu)
 ```conf
 # Caractéristiques du cluster
 totem {
@@ -209,7 +209,7 @@ quorum {
 
 
 ```
-> [!NOTE] On applique la configuration avec `sudo systemctl restart corosync` ; si besoin est, on l'active au démarrage avec `sudo systemctl enable --now corosync`
+>[!NOTE] On applique la configuration avec `sudo systemctl restart corosync` ; si besoin est, on l'active au démarrage avec `sudo systemctl enable --now corosync`
 
 6. Activation de pacemaker
 ```bash
@@ -238,17 +238,17 @@ Full List of Resources:
 ```
 
 7. Désactivation de la politique "*S*hoot *T*he *O*ther *N*ode *I*n *T*he *H*ead" 
-> [!IMPORTANT]
-> inutile dans un cluster aussi petit, avec un quorum décisionnel impair
-> À lancer sur la machine décisionnelle (ici `maestro`)
+>[!IMPORTANT]
+>inutile dans un cluster aussi petit, avec un quorum décisionnel impair
+>À lancer sur la machine décisionnelle (ici `maestro`)
 ```bash
 sudo crm configure property stonith-enabled=false
 ```
 
 8. Paramétrage d'une plage d'IPs virtuelles
-> [!IMPORTANT]
-> Permet aux machines de travailler même sans le maestro, au cas où ce dernier 
-> viendrait à manquer à l'appel
+>[!IMPORTANT]
+>Permet aux machines de travailler même sans le maestro, au cas où ce dernier 
+>viendrait à manquer à l'appel
 ```bash
 sudo crm configure primitive virtual-ip ocf:heartbeat:IPaddr2 \
       params ip="192.168.122.100" \
@@ -257,8 +257,8 @@ sudo crm configure primitive virtual-ip ocf:heartbeat:IPaddr2 \
 ```
 
 9. Paramétrage d'une ressource Apache qu'on va affecter aux VMs 
-> [!INFO]
-> Le paramètre "configfile" permet de savoir où se trouve le fichier de config Apache
+>[!INFO]
+>Le paramètre "configfile" permet de savoir où se trouve le fichier de config Apache
 ```bash
 crm configure primitive apache-web \
       ocf:heartbeat:apache \
@@ -293,10 +293,10 @@ codedir = /etc/puppetlabs/code
 ```
 
 3. Configuration d'un manifeste de site
-> [!INFO] 
-> Le manifest s'occupe de l'installation des paquets et de la distribution des configurations
-> de manière adaptée. Cet outil a été choisi pour éviter la réécriture constante des configurations
-> et des commandes d'installation sur chaque VM : en bref, meilleure scalabilité que Ctrl+C/Ctrl+V
+>[!INFO] 
+>Le manifest s'occupe de l'installation des paquets et de la distribution des configurations
+>de manière adaptée. Cet outil a été choisi pour éviter la réécriture constante des configurations
+>et des commandes d'installation sur chaque VM : en bref, meilleure scalabilité que Ctrl+C/Ctrl+V
 ```puppet
 # Gestion des deux noeuds webservers
 node 'web-one', 'web-two' {
@@ -408,9 +408,9 @@ sudo apt update && sudo apt install puppet-agent -y
 ```
 
 2. Configuration minimale de l'agent Puppet
-> [!NOTE] 
-> Cette configuration se fait dans `/etc/puppetlabs/puppet/puppet.conf`
-> Il faudra potentiellement ajouter l'adresse du serveur Puppet dans `/etc/hosts`
+>[!NOTE] 
+>Cette configuration se fait dans `/etc/puppetlabs/puppet/puppet.conf`
+>Il faudra potentiellement ajouter l'adresse du serveur Puppet dans `/etc/hosts`
 ```conf
 [main]
 server=maestro
@@ -422,11 +422,11 @@ sudo systemctl enable --now puppet
 ```
 
 4. Création d'un replica set sur une instance
-> [!IMPORTANT]
-> Vous devrez choisir une instance parmi celles ayant une base de données MongoDB, et initialiser un `replica set`
-> afin d'assurer l'intégrité des données qui s'y trouvent, et leur réplication sur une autre instance.
-> Il vous faudra ajuster les adresses IPs pour que l'adresse de priorité 1 soit l'autre instance MongoDB, et celle de
-> priorité 2 soit l'instance hébergée sur l'hôte sur lequel vous lancez la commande.
+>[!IMPORTANT]
+>Vous devrez choisir une instance parmi celles ayant une base de données MongoDB, et initialiser un `replica set`
+>afin d'assurer l'intégrité des données qui s'y trouvent, et leur réplication sur une autre instance.
+>Il vous faudra ajuster les adresses IPs pour que l'adresse de priorité 1 soit l'autre instance MongoDB, et celle de
+>priorité 2 soit l'instance hébergée sur l'hôte sur lequel vous lancez la commande.
 ```bash
 mongosh --eval '
 rs.initiate({
@@ -451,9 +451,9 @@ sudo apt install -y haproxy
 ```
 
 2. Configuration dans /etc/haproxy/haproxy.cfg
-> [!IMPORTANT]
-> Encore une fois, il vous faudra ajuster les adresses IPs afin de les faire correspondre 
-> aux adresses de vos instances web
+>[!IMPORTANT]
+>Encore une fois, il vous faudra ajuster les adresses IPs afin de les faire correspondre 
+>aux adresses de vos instances web
 ```conf
 global
     log /dev/log local0
@@ -484,7 +484,7 @@ backend web-servers
 HAProxy a besoin d'un fichier combiné pour le certificat & sa clef, obtenable
 comme suit ; cette chaîne de certificats se trouvera dans `/etc/ssl/private/coursero.pem`
 ```bash
-sudo cat /etc/ssl/certs/coursero.crt /etc/ssl/private/coursero.key > /etc/ssl/private/coursero.pem
+sudo cat /etc/ssl/certs/coursero.crt /etc/ssl/private/coursero.key >> /etc/ssl/private/coursero.pem
 ```
 
 4. Démarrer HAProxy sur `maestro`
@@ -605,6 +605,6 @@ Il faudra arranger les différents scripts comme suit ;
 }```
 
 5. Exécution
-> [!IMPORTANT] 
-> Les tests s'exécutent automatiquement et retransmettent les données aux 
-> bases de données, en attente d'affichage aux utilisateur.ices
+>[!IMPORTANT] 
+>Les tests s'exécutent automatiquement et retransmettent les données aux 
+>bases de données, en attente d'affichage aux utilisateur.ices
