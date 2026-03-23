@@ -1,0 +1,28 @@
+{
+    "exercise_id": "ex2",
+    "course_id": "docker",
+    "title": "Sum Calculator",
+    "description": "Write a program that takes two numbers as arguments and prints their sum",
+    "languages": ["python", "c"],
+    "tests": [{
+            "name": "Sum 2 + 3",
+            "args": ["2", "3"],
+            "expected_output": "5"
+        },
+        {
+            "name": "Sum 10 + 20",
+            "args": ["10", "20"],
+            "expected_output": "30"
+        },
+        {
+            "name": "Sum negative numbers",
+            "args": ["-5", "10"],
+            "expected_output": "5"
+        },
+        {
+            "name": "Sum with zero",
+            "args": ["0", "42"],
+            "expected_output": "42"
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+[Unit]
+Description=Coursero Queue Worker - Code Correction Service
+After=network.target mongod.service
+Wants=mongod.service
+
+[Service]
+Type=simple
+User=coursero
+Group=coursero
+WorkingDirectory=/var/www/coursero/scripts
+ExecStart=/usr/bin/python3 /var/www/coursero/scripts/queue_worker.py
+Restart=always
+RestartSec=5
+
+Environment="MONGO_URI=mongodb://localhost:27017"
+Environment="PYTHONUNBUFFERED=1"
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/www/coursero/submissions /var/log/coursero /tmp
+PrivateTmp=yes
+
+StandardOutput=append:/var/log/coursero/worker.log
+StandardError=append:/var/log/coursero/worker.log
+
+[Install]
+WantedBy=multi-user.target

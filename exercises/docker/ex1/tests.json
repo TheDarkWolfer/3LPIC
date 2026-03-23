@@ -1,0 +1,12 @@
+{
+    "exercise_id": "ex1",
+    "course_id": "docker",
+    "title": "Hello World",
+    "description": "Write a program that prints 'Hello, World!' to stdout",
+    "languages": ["python", "c"],
+    "tests": [{
+        "name": "Basic output",
+        "args": [],
+        "expected_output": "Hello, World!"
+    }]
+}
