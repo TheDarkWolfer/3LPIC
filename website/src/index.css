@@ -169,6 +169,21 @@ button {
     }
 }
 
+.connecte {
+    display: flex;
+    gap: 5px;
+    div {
+        width: 50%;
+        border-right: 1px gray solid;
+    }
+    input, form {
+        width: 50%;
+        margin-top: auto;
+        border-radius: 10px;
+        border: none;
+    }
+}
+
 button:hover {
     background: #eee;
 }

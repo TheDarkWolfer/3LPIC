@@ -10,15 +10,15 @@ import Deconnexion from './deconnexion';
 
 export default function App() {
 
-    const mail = useContext(MailContext);
+    const { mail } = useContext(MailContext);
 
-    if (mail) {
+    if (!mail) {
         return (
             <>
                 <Router>
                     <Routes>
-                        <Route path="*" element={<Connecte />} />;
-                        </Routes>
+                        <Route path="*" element={<Connecte />} />
+                    </Routes>
                 </Router>
             </>
         );
@@ -31,14 +31,11 @@ export default function App() {
                     <a href="/">Cours</a>
                     <a href="/rendus">Rendus</a>
                 </div>
-                {mail ? 
-                <span>Compte<div> {mail} <div className='sep'></div><a href='/deconnexion'>Se deconnecter</a></div></span> : 
-                <a href='/connecte'>Se connecter</a>
-                }
+                <span>Compte<div> {mail} <div className='sep'></div><a href='/deconnexion'>Se deconnecter</a></div></span>
             </header>
         </>
     );
-    
+
     return (
         <>
             {header}
@@ -48,10 +45,9 @@ export default function App() {
                     <Route path="/cours/:coursId" element={<Cours />} />
                     <Route path="/devoir/:devoirId" element={<Devoir />} />
                     <Route path="/rendus" element={<Rendus />} />
-                    <Route path="/connecte" element={<Connecte />} />;
                     <Route path="/deconnexion" element={<Deconnexion />} />
                 </Routes>
             </Router>
         </>
-  )
+    )
 }

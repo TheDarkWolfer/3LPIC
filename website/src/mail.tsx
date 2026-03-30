@@ -1,3 +1,11 @@
 import { createContext } from "react";
 
-export const MailContext = createContext('');
+export interface MailContextType {
+    mail: string;
+    setMail: (mail: string) => void;
+}
+
+export const MailContext = createContext<MailContextType>({
+    mail: '',
+    setMail: () => { }
+});

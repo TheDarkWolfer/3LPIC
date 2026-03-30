@@ -51,7 +51,7 @@ async function connectDB() {
     await client.connect();
     db = client.db('coursero');
     console.log('Connected to MongoDB');
-    
+
     // Create indexes
     await db.collection('submissions').createIndex({ status: 1, submitted_at: 1 });
     await db.collection('submissions').createIndex({ user_email: 1 });
@@ -91,25 +91,36 @@ app.get('/api/courses/:id/exercises', async (req, res) => {
     }
 });
 
+// Get exercise by ID
+app.get('/api/exercises/:id', async (req, res) => {
+    try {
+        const exercise = await db.collection('exercises').findOne({ _id: req.params.id });
+        if (!exercise) return res.status(404).json({ error: 'Exercise not found' });
+        res.json(exercise);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ==================== SUBMISSIONS ====================
 
 // Submit code for correction
 app.post('/api/submit', upload.single('file'), async (req, res) => {
     try {
         const { user_email, course_id, exercise_id, language } = req.body;
-        
+
         if (!user_email || !course_id || !exercise_id || !language) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
-        
+
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-        
+
         if (!['python', 'c'].includes(language.toLowerCase())) {
             return res.status(400).json({ error: 'Language must be python or c' });
         }
-        
+
         const submission = {
             user_email,
             course_id,
@@ -125,9 +136,9 @@ app.post('/api/submit', upload.single('file'), async (req, res) => {
             details: [],
             error: null
         };
-        
+
         const result = await db.collection('submissions').insertOne(submission);
-        
+
         res.status(201).json({
             message: 'Submission queued for correction',
             submission_id: result.insertedId,
@@ -145,11 +156,11 @@ app.get('/api/submissions/:id', async (req, res) => {
             { _id: new ObjectId(req.params.id) },
             { projection: { file_path: 0 } } // Don't expose file path
         );
-        
+
         if (!submission) {
             return res.status(404).json({ error: 'Submission not found' });
         }
-        
+
         res.json(submission);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -164,7 +175,7 @@ app.get('/api/users/:email/submissions', async (req, res) => {
             .project({ file_path: 0 })
             .sort({ submitted_at: -1 })
             .toArray();
-        
+
         res.json(submissions);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -177,7 +188,7 @@ app.get('/api/users/:email/grades', async (req, res) => {
         const grades = await db.collection('best_grades')
             .find({ user_email: req.params.email })
             .toArray();
-        
+
         res.json(grades);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -188,7 +199,7 @@ app.get('/api/users/:email/grades', async (req, res) => {
 app.get('/api/users/:email/exercises/:courseId/:exerciseId/status', async (req, res) => {
     try {
         const { email, courseId, exerciseId } = req.params;
-        
+
         // Check for pending submission
         const pending = await db.collection('submissions').findOne({
             user_email: email,
@@ -196,26 +207,26 @@ app.get('/api/users/:email/exercises/:courseId/:exerciseId/status', async (req, 
             exercise_id: exerciseId,
             status: { $in: ['pending', 'processing'] }
         });
-        
+
         if (pending) {
             return res.json({ status: 'awaiting_correction', submission_id: pending._id });
         }
-        
+
         // Check for best grade
         const best = await db.collection('best_grades').findOne({
             user_email: email,
             course_id: courseId,
             exercise_id: exerciseId
         });
-        
+
         if (best) {
-            return res.json({ 
-                status: 'scored', 
+            return res.json({
+                status: 'scored',
                 grade: best.grade,
                 updated_at: best.updated_at
             });
         }
-        
+
         res.json({ status: 'not_submitted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -231,7 +242,7 @@ app.get('/api/queue/stats', async (req, res) => {
         const processing = await db.collection('submissions').countDocuments({ status: 'processing' });
         const completed = await db.collection('submissions').countDocuments({ status: 'completed' });
         const failed = await db.collection('submissions').countDocuments({ status: 'failed' });
-        
+
         res.json({ pending, processing, completed, failed });
     } catch (err) {
         res.status(500).json({ error: err.message });

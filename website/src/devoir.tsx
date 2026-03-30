@@ -23,18 +23,72 @@ interface SubmissionResult {
     error?: string;
 }
 
+interface Exercise {
+    _id: string;
+    course_id: string;
+    exercise_id: string;
+    title: string;
+    description: string;
+    languages: string[];
+    deadline: string;
+}
+
 function Devoir() {
-    const { devoirId } = useParams();
+    const { devoirId } = useParams<{ devoirId: string }>();
     const mail = useContext(MailContext);
     
+    const [exercise, setExercise] = useState<Exercise | null>(null);
     const [language, setLanguage] = useState<"python" | "c">("python");
     const [file, setFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [submissionId, setSubmissionId] = useState<string | null>(null);
     const [result, setResult] = useState<SubmissionResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
     
     const pollIntervalRef = useRef<number | null>(null);
+
+    // Fetch exercise data on mount
+    useEffect(() => {
+        const fetchExercise = async () => {
+            try {
+                setLoading(true);
+                
+                // Search for exercise by _id in all courses
+                const coursesResponse = await Axios.get(`${API_URL}/api/courses`);
+                const courses = coursesResponse.data;
+                
+                let foundExercise: Exercise | null = null;
+                
+                for (const course of courses) {
+                    const exercisesResponse = await Axios.get(`${API_URL}/api/courses/${course._id}/exercises`);
+                    const exercises = exercisesResponse.data;
+                    
+                    const match = exercises.find((ex: Exercise) => ex._id === devoirId);
+                    if (match) {
+                        foundExercise = match;
+                        break;
+                    }
+                }
+                
+                if (foundExercise) {
+                    setExercise(foundExercise);
+                    setLanguage(foundExercise.languages[0] as "python" | "c");
+                } else {
+                    setError("Exercice non trouvé");
+                }
+            } catch (err) {
+                console.error(err);
+                setError("Erreur lors du chargement de l'exercice");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (devoirId) {
+            fetchExercise();
+        }
+    }, [devoirId]);
 
     // Poll for submission status
     useEffect(() => {
@@ -94,6 +148,11 @@ function Devoir() {
             return;
         }
 
+        if (!exercise) {
+            setError("Exercice non chargé");
+            return;
+        }
+
         setSubmitting(true);
         setError(null);
         setResult(null);
@@ -101,8 +160,8 @@ function Devoir() {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("user_email", mail);
-        formData.append("course_id", "docker"); // TODO: dynamic
-        formData.append("exercise_id", devoirId || "ex1");
+        formData.append("course_id", exercise.course_id);
+        formData.append("exercise_id", exercise.exercise_id);
         formData.append("language", language);
 
         try {
@@ -138,37 +197,50 @@ function Devoir() {
         );
     };
 
+    if (loading) {
+        return (
+            <>
+                <h2>Chargement de l'exercice...</h2>
+            </>
+        );
+    }
+
+    if (!exercise) {
+        return (
+            <>
+                <h2>Exercice</h2>
+                <p style={{ color: 'red' }}>{error || 'Exercice non trouvé'}</p>
+            </>
+        );
+    }
+
+    const deadlineDate = new Date(exercise.deadline);
+
     return (
         <>
-            <h2>Projet Docker n°{devoirId?.replace("ex", "") || "1"}</h2>
+            <h2>{exercise.title}</h2>
             <main>
-                <p>
-                    Dans ce projet, il est demandé de réaliser des conteneurs dans docker grâce à un docker compose 
-                    pour créer une solution plus simple que celle actuellement présente dans une entreprise.
-                </p>
+                <p>{exercise.description}</p>
                 <br />
-                <span>Date limite du rendu: <strong>30/04/2026</strong></span>
+                <span>Date limite du rendu: <strong>{deadlineDate.toLocaleDateString('fr-FR')}</strong></span>
                 
                 {/* Language selection */}
                 <div className="language-select">
                     <h3>Langage de programmation</h3>
-                    <input 
-                        type="radio" 
-                        name="langage" 
-                        id="python" 
-                        checked={language === "python"}
-                        onChange={() => setLanguage("python")}
-                    />
-                    <label htmlFor="python"><Image icon="python.png" size="75px" /></label>
-                    
-                    <input 
-                        type="radio" 
-                        name="langage" 
-                        id="c" 
-                        checked={language === "c"}
-                        onChange={() => setLanguage("c")}
-                    />
-                    <label htmlFor="c"><Image icon="c.png" size="75px" /></label>
+                    {exercise.languages.map((lang) => (
+                        <React.Fragment key={lang}>
+                            <input 
+                                type="radio" 
+                                name="langage" 
+                                id={lang} 
+                                checked={language === lang}
+                                onChange={() => setLanguage(lang as "python" | "c")}
+                            />
+                            <label htmlFor={lang}>
+                                <Image icon={`${lang}.png`} size="75px" />
+                            </label>
+                        </React.Fragment>
+                    ))}
                 </div>
                 
                 {/* File upload */}

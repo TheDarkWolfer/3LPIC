@@ -1,25 +1,76 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Axios from "axios";
 import Cours from "./composants/cours";
 
-function Devoirs() {
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+interface Course {
+    _id: string;
+    name: string;
+    description: string;
+}
+
+function Coursero() {
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setLoading(true);
+                const response = await Axios.get(`${API_URL}/api/courses`);
+                setCourses(response.data);
+                setError(null);
+            } catch (err) {
+                setError('Erreur lors du chargement des cours');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCourses();
+    }, []);
+
+    if (loading) {
+        return (
+            <>
+                <h2>Tous les cours</h2>
+                <main className="grid">
+                    <p>Chargement des cours...</p>
+                </main>
+            </>
+        );
+    }
+
+    if (error) {
+        return (
+            <>
+                <h2>Tous les cours</h2>
+                <main className="grid">
+                    <p style={{ color: 'red' }}>{error}</p>
+                </main>
+            </>
+        );
+    }
 
     return (
         <>
             <h2>Tous les cours</h2>
             <main className="grid">
-                <Cours cours="Docker" />
-                <Cours cours="React" />
-                <Cours cours="C#" />
-                <Cours cours="Python" />
-                <Cours cours="Linux" />
-                <Cours cours="" />
-                <Cours cours="7" />
-                <Cours cours="9" />
-                <Cours cours="10" />
+                {courses.map((course) => (
+                    <Cours
+                        key={course._id}
+                        course={course}
+                        completedCount={0}
+                        totalCount={5}
+                        averageScore={0}
+                    />
+                ))}
             </main>
         </>
     );
 }
 
-export default Devoirs;
+export default Coursero;
