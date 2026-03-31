@@ -4,7 +4,7 @@ import Image from "./composants/image";
 import { MailContext } from "./mail";
 import Axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:27017";
 
 type SubmissionStatus = "not_submitted" | "pending" | "processing" | "completed" | "failed";
 

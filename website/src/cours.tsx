@@ -3,7 +3,7 @@ import { useParams } from "react-router";
 import Axios from "axios";
 import Devoir from "./composants/devoir";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:27017";
 
 interface Exercise {
     _id: string;

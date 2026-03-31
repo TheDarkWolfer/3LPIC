@@ -3,7 +3,7 @@ import Axios from "axios";
 import { MailContext } from "./mail";
 import Devoir from "./composants/devoir";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:27017";
 
 interface Submission {
     _id: string;
