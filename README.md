@@ -602,7 +602,8 @@ Il faudra arranger les différents scripts comme suit ;
       "expected_output": "Hello, John!"
     }
   ]
-}```
+}
+```
 
 5. Exécution
 > [!IMPORTANT] 
